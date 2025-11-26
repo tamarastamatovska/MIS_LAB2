@@ -1,16 +1,11 @@
-# mis_lab2_221031
+# Recipe App
 
-A new Flutter project.
+A Flutter app to explore recipes from around the world. 
+Browse through different food categories, search for specific meals, and get cooking instructions with ingredients.
 
-## Getting Started
+# Screenshots and Video
 
-This project is a starting point for a Flutter application.
+You can see the video and screenshots in the folder Lab2_Video_Screenshots
 
-A few resources to get you started if this is your first Flutter project:
+Also, clicking the star icon in the App Bar displays a random meal.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
