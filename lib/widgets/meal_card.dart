@@ -4,11 +4,15 @@ import '../models/meal_model.dart';
 class MealCard extends StatelessWidget {
   final Meal meal;
   final VoidCallback onTap;
+  final VoidCallback? onChangeFavorite;
+  final bool isFavorite;
 
   const MealCard({
     super.key,
     required this.meal,
     required this.onTap,
+    this.onChangeFavorite,
+    this.isFavorite = false,
   });
 
   @override
@@ -40,15 +44,29 @@ class MealCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                meal.strMeal,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      meal.strMeal,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (onChangeFavorite != null)
+                    GestureDetector(
+                      onTap: onChangeFavorite!,
+                      child: Icon(
+                        isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                        color: isFavorite ? Colors.yellow : Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
+                ],
               ),
             ),
           ],

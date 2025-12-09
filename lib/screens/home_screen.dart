@@ -1,12 +1,24 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../models/category_model.dart';
+import '../models/meal_model.dart';
 import '../services/api_service.dart';
 import '../widgets/category_card.dart';
+import 'favorites_screen.dart';
 import 'meals_screen.dart';
 import 'meal_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final List<Meal> favorites;
+  final RemoteMessage? initialMessage;
+
+  const HomeScreen({
+    super.key,
+    required this.favorites,
+    this.initialMessage,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -16,14 +28,67 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Category> _categories = [];
   List<Category> _filteredCategories = [];
   bool _isLoading = true;
+
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _requestPermission();
+
+
+      if (widget.initialMessage != null) {
+        final msg = widget.initialMessage!;
+        if (msg.data['action'] == 'random_recipe') {
+          _showRandomMeal();
+        }
+      }
+    });
+
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("Foreground notification: ${message.notification?.title}");
+
+    });
+
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("User tapped notification (from background)");
+      if (message.data['action'] == 'random_recipe') {
+        _showRandomMeal();
+      }
+    });
   }
+
+  Future<void> _requestPermission() async {
+
+    PermissionStatus status = await Permission.notification.request();
+    print("Notification Permission Status: $status");
+
+
+    NotificationSettings settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    print("Firebase Permission: ${settings.authorizationStatus}");
+
+
+    String? token = await _messaging.getToken();
+    print("FCM Token: $token");
+  }
+
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +97,20 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.secondary,
         title: const Text('Recipe App - Categories'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bookmark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      FavoritesScreen(favorites: widget.favorites),
+                ),
+              ).then((_) {
+                setState(() {});
+              });
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.star),
             onPressed: _showRandomMeal,
@@ -67,7 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.75,
                   crossAxisSpacing: 10,
@@ -84,9 +164,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                           builder: (context) => MealsScreen(
                             category: category.strCategory,
+                            favorites: widget.favorites,
                           ),
                         ),
-                      );
+                      ).then((_) {
+                        setState(() {});
+                      });
                     },
                   );
                 },
@@ -144,4 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
+
+
 }
+

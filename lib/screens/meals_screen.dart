@@ -6,8 +6,13 @@ import 'meal_detail_screen.dart';
 
 class MealsScreen extends StatefulWidget {
   final String category;
+  final List<Meal> favorites;
 
-  const MealsScreen({super.key, required this.category});
+  const MealsScreen({
+    super.key,
+    required this.category,
+    required this.favorites,
+  });
 
   @override
   State<MealsScreen> createState() => _MealsScreenState();
@@ -19,6 +24,7 @@ class _MealsScreenState extends State<MealsScreen> {
   bool _isLoading = true;
   bool _isSearching = false;
   String _searchQuery = '';
+
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
 
@@ -60,45 +66,18 @@ class _MealsScreenState extends State<MealsScreen> {
           ),
           Expanded(
             child: _filteredMeals.isEmpty && _searchQuery.isNotEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.search_off,
-                      size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No meals found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _isSearching
-                        ? null
-                        : () async {
-                      await _searchMealsInApi(_searchQuery);
-                    },
-                    child: _isSearching
-                        ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2),
-                    )
-                        : const Text('Search in API'),
-                  ),
-                ],
-              ),
-            )
+                ? _buildSearchEmpty()
                 : _filteredMeals.isEmpty
                 ? const Center(
               child: Text(
                 'No meals in this category',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+                style:
+                TextStyle(fontSize: 18, color: Colors.grey),
               ),
             )
                 : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12),
               child: GridView.builder(
                 gridDelegate:
                 const SliverGridDelegateWithFixedCrossAxisCount(
@@ -110,14 +89,29 @@ class _MealsScreenState extends State<MealsScreen> {
                 itemCount: _filteredMeals.length,
                 itemBuilder: (context, index) {
                   final meal = _filteredMeals[index];
+                  final isFav = widget.favorites
+                      .any((m) => m.idMeal == meal.idMeal);
                   return MealCard(
                     meal: meal,
+                    isFavorite: isFav,
+                    onChangeFavorite: () {
+                      setState(() {
+                        final idx = widget.favorites.indexWhere(
+                                (m) => m.idMeal == meal.idMeal);
+                        if (idx >= 0) {
+                          widget.favorites.removeAt(idx);
+                        } else {
+                          widget.favorites.add(meal);
+                        }
+                      });
+                    },
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              MealDetailScreen(mealId: meal.idMeal),
+                              MealDetailScreen(
+                                  mealId: meal.idMeal),
                         ),
                       );
                     },
@@ -129,6 +123,11 @@ class _MealsScreenState extends State<MealsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildSearchEmpty() {
+    return Center();
+
   }
 
   void _loadMeals() async {
@@ -154,18 +153,6 @@ class _MealsScreenState extends State<MealsScreen> {
     });
   }
 
-  Future<void> _searchMealsInApi(String query) async {
-    if (query.isEmpty) return;
 
-    setState(() {
-      _isSearching = true;
-    });
-
-    final meals = await _apiService.searchMeals(query);
-
-    setState(() {
-      _isSearching = false;
-      _filteredMeals = meals;
-    });
-  }
 }
+
